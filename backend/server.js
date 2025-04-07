@@ -8,7 +8,11 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+<<<<<<< HEAD
 const PORT = process.env.PORT || 5001;
+=======
+const PORT = process.env.PORT || 5000;
+>>>>>>> 1decdc42ea6f2bd5f2299a9c11198079368105a6
 
 app.post("/update-product", async (req, res) => {
   const { product_id, new_description } = req.body;
