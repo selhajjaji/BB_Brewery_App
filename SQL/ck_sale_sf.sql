@@ -1,0 +1,21 @@
+CREATE OR REPLACE FUNCTION CK_SALE_SF(
+    p_date IN DATE,
+    p_idproduct IN BB_SALE.IDPRODUCT%TYPE
+)
+RETURN VARCHAR2
+IS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*)
+    INTO v_count
+    FROM BB_SALE
+    WHERE IDPRODUCT = p_idproduct
+      AND p_date BETWEEN STARTDATE AND ENDDATE;
+
+    IF v_count > 0 THEN
+        RETURN 'ON SALE!';
+    ELSE
+        RETURN 'NOT ON SALE';
+    END IF;
+END CK_SALE_SF;
+/
