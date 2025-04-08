@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, Card, CardContent, Grid, Divider } from '@mui/material';
 import axios from 'axios';
@@ -157,23 +156,3 @@ function BB_BreweryApp() {
 
 export default BB_BreweryApp;
 
-=======
-import './App.css';
-import React from "react";
-import UpdateProduct from "./components/UpdateProduct";
-import AddProduct from "./components/AddProduct";
-import CalculateTax from "./components/CalculateTax";
-
-function App() {
-  return (
-    <div>
-      <h1>BB Brewery Application</h1>
-      <UpdateProduct />
-      <AddProduct />
-      <CalculateTax />
-    </div>
-  );
-}
-
-export default App;
->>>>>>> 1decdc42ea6f2bd5f2299a9c11198079368105a6
