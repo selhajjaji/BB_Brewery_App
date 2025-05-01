@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 //  Update Product Description
 app.post("/update-product", async (req, res) => {
@@ -55,51 +55,102 @@ app.post("/calculate-tax", async (req, res) => {
 
 // 🆕 ✅ Update Shipping Status
 app.post("/update-shipping-status", async (req, res) => {
-  const { basket_id, ship_date, shipper, tracking_number } = req.body;
+  const { basket_id, date_shipped, shipper, tracking_number } = req.body;
   try {
-    const query = `BEGIN STATUS_SHIP_SP(:basket_id, :ship_date, :shipper, :tracking_number); END;`;
-    await executeQuery(query, { basket_id, ship_date, shipper, tracking_number });
+    const query = `BEGIN STATUS_SHIP_SP(:basket_id, TO_DATE(:date_shipped, 'DD-MON-YY'), :shipper, :tracking_number); END;`;
+    await executeQuery(query, {
+      basket_id,
+      date_shipped,
+      shipper,
+      tracking_number
+    });
     res.json({ message: "Shipping status updated successfully!" });
   } catch (err) {
-    console.error("Database Error: ", err);
+    console.error("Error updating shipping status:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🆕 Add Basket Item
-app.post("/add-basket-item", async (req, res) => {
-  const { idproduct, idbasket, price, quantity, option1, option2 } = req.body;
+app.post("/add-to-basket", async (req, res) => {
+  const { basket_id, product_id, price, quantity, size_code, form_code } = req.body;
   try {
-    const query = `BEGIN COMP214_W25_ERS_1.BASKET_ADD_SP(:idproduct, :idbasket, :price, :quantity, :option1, :option2); END;`;
-    await executeQuery(query, {
-      idproduct,
-      idbasket,
-      price,
-      quantity,
-      option1,
-      option2
-    });
-    res.json({ message: "Basket item added successfully!" });
+    const query = `BEGIN BASKET_ADD_SP(:basket_id, :product_id, :price, :quantity, :size_code, :form_code); END;`;
+    await executeQuery(query, { basket_id, product_id, price, quantity, size_code, form_code });
+    res.json({ message: "Item added to basket successfully!" });
   } catch (err) {
-    console.error("Database Error: ", err);
+    console.error("Error adding to basket:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
 // 🆕  Check Sale Status
-app.post("/check-sale", async (req, res) => {
-  const { date, idproduct } = req.body;
+app.post("/check-sale-status", async (req, res) => {
+  const { date, product_id } = req.body;
   try {
-    const query = `BEGIN :result := CK_SALE_SF(:date, :idproduct); END;`;
-    const result = await executeQuery(query, {
+    const query = `BEGIN :result := CK_SALE_SF(TO_DATE(:date, 'DD-MON-YY'), :product_id); END;`;
+    const binds = {
       date,
-      idproduct,
-      result: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
-    });
-    res.json({ saleStatus: result.outBinds.result });
+      product_id,
+      result: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
+    };
+    const result = await executeQuery(query, binds);
+    res.json({ status: result.outBinds.result });
   } catch (err) {
-    console.error("Database Error: ", err);
+    console.error("Error checking sale status:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/check-basket-stock", async (req, res) => {
+  const { basket_id } = req.body;
+  try {
+    const query = `BEGIN CHECK_BASKET_STOCK_SP(:basket_id, :result); END;`;
+    const binds = {
+      basket_id,
+      result: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
+    };
+    const result = await executeQuery(query, binds);
+    res.json({ status: result.outBinds.result });
+  } catch (err) {
+    console.error("Error checking basket stock:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/get-total-spending", async (req, res) => {
+  const { shopper_id } = req.body;
+
+  // Case 1: Show specific shopper's total spending
+  if (shopper_id) {
+    try {
+      const query = `BEGIN :result := TOT_PURCH_SF(:shopper_id); END;`;
+      const binds = {
+        shopper_id,
+        result: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+      };
+      const result = await executeQuery(query, binds);
+      res.json({ total: result.outBinds.result });
+    } catch (err) {
+      console.error("Error calculating total spending:", err);
+      res.status(400).json({ error: "Invalid Shopper ID" });
+    }
+  } 
+  // Case 2: Show total for all shoppers
+  else {
+    try {
+      const query = `
+        SELECT s.idshopper, s.firstname || ' ' || s.lastname AS name, NVL(SUM(b.total), 0) AS total
+        FROM bb_shopper s
+        LEFT JOIN bb_basket b ON s.idshopper = b.idshopper
+        GROUP BY s.idshopper, s.firstname, s.lastname
+        ORDER BY s.idshopper
+      `;
+      const result = await executeQuery(query);
+      res.json({ shoppers: result.rows });
+    } catch (err) {
+      console.error("Error fetching shoppers list:", err);
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 
