@@ -1,16 +1,19 @@
-CREATE OR REPLACE PROCEDURE BASKET_ADD_SP(
-    p_idproduct IN BB_BASKETITEM.IDPRODUCT%TYPE,
-    p_idbasket IN BB_BASKETITEM.IDBASKET%TYPE,
-    p_price IN BB_BASKETITEM.PRICE%TYPE,
-    p_quantity IN BB_BASKETITEM.QUANTITY%TYPE,
-    p_codesize IN BB_BASKETITEM.CODESIZE%TYPE,
-    p_codeform IN BB_BASKETITEM.CODEFORM%TYPE
+CREATE OR REPLACE PROCEDURE BASKET_ADD_SP (
+    p_basketid IN NUMBER,
+    p_productid IN NUMBER,
+    p_price IN NUMBER,
+    p_quantity IN NUMBER,
+    p_size IN NUMBER,
+    p_form IN NUMBER
 )
 IS
 BEGIN
-    INSERT INTO BB_BASKETITEM (IDPRODUCT, IDBASKET, PRICE, QUANTITY, CODESIZE, CODEFORM)
-    VALUES (p_idproduct, p_idbasket, p_price, p_quantity, p_codesize, p_codeform);
-
+    INSERT INTO bb_basketitem (
+        idbasketitem, idbasket, idproduct, price, quantity, option1, option2
+    )
+    VALUES (
+        bb_idbasketitem_seq.NEXTVAL, p_basketid, p_productid, p_price, p_quantity, p_size, p_form
+    );
     COMMIT;
 END BASKET_ADD_SP;
 /
